@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NPC Shop Items</title>
+    <style>
+        body {
+            background-color: #1e1e1e; /* 어두운 배경 */
+            font-family: 'Arial', sans-serif;
+            color: #ffffff; /* 글자 색상을 밝게 */
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #f2f2f2; /* 밝은 제목 색상 */
+            margin-bottom: 20px;
+        }
+        .item-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+        }
+        .container {
+            width: 130px; 
+            padding: 15px;
+            border: 1px solid #333;
+            border-radius: 10px;
+            background-color: #2c2c2c; /* 카드 배경을 어두운 색상으로 변경 */
+            text-align: center;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4); /* 더 깊은 그림자 */
+        }
+        .item-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #ffffff;
+        }
+        .item-image {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .color-codes {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #cccccc;
+        }
+        .color-box {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            margin-right: 5px;
+            border: 1px solid #fff;
+            border-radius: 4px;
+            position: relative;
+        }
+        .tooltip {
+            display: none;
+            position: absolute;
+            background-color: #333;
+            color: #fff;
+            padding: 5px;
+            border-radius: 5px;
+            z-index: 1;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+        }
+        .color-box:hover .tooltip {
+            display: block;
+        }
+        label, select, input, button {
+            font-size: 14px;
+            color: #f2f2f2;
+            background-color: #333;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        button {
+            cursor: pointer;
+        }
+        .countdown {
+            font-size: 20px;
+            font-weight: bold;
+            color: #f00;
+            text-align: center;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <h1>쭈머니 보자!</h1>
+    
+    <label for="npc-name">지역:</label>
+    <select id="npc-name">
+        <option value="전체">전체</option> <!-- 전체 옵션 추가 -->
+        <option value="상인 네루">티르 코네일</option>
+        <option value="상인 누누">던바튼</option>
+        <option value="상인 라누">반호르</option>
+        <option value="상인 메루">이멘마하</option>
+        <option value="상인 베루">탈틴</option>
+        <option value="상인 에루">타라</option>
+        <option value="상인 아루">카브</option>
+        <option value="상인 피루">벨바스트</option>
+        <option value="테일로">켈라</option>
+        <option value="켄">필리아</option>
+        <option value="리나">코르</option>
+        <option value="카디">발레스</option>
+        <option value="귀넥">카루</option>
+        <option value="얼리">오아시스</option>
+        <option value="모락">칼리다</option>
+        <option value="데위">페라/자르딘</option>
+        <option value="상인 세누">스카하</option>
+    </select>
+
+    <label for="server-name">서버:</label>
+    <select id="server-name">
+        <option value="류트">류트</option>
+        <option value="만돌린">만돌린</option>
+        <option value="하프">하프</option>
+        <option value="울프">울프</option>
+    </select>
+
+    <label for="channel">채널:</label>
+    <input type="text" id="channel" placeholder="채널">
+
+    <button id="fetch-button">채널링</button>
+
+    <div class="item-container" id="item-container"></div>
+
+    <div class="countdown" id="countdown"></div> <!-- 카운트다운 표시 영역 -->
+
+    <script>
+        document.getElementById('fetch-button').addEventListener('click', fetchNpcShopItems);
+        const countdownDisplay = document.getElementById('countdown');
+        
+        async function fetchNpcShopItems() {
+            const npcName = document.getElementById('npc-name').value;
+            const serverName = document.getElementById('server-name').value;
+            const channel = document.getElementById('channel').value;
+            const apiKey = 'test_8cb2861b82ad263182afcbac6e47294ac915e74f09c3e436b93b4605a9d8a141efe8d04e6d233bd35cf2fabdeb93fb0d';
+
+            const npcList = [
+                '상인 네루', '상인 누누', '상인 라누', '상인 메루', '상인 베루', '상인 에루', 
+                '상인 아루', '상인 피루', '테일로', '켄', '리나', '카디', '귀넥', 
+                '얼리', '모락', '데위', '상인 세누'
+            ];
+
+            let shops = [];
+
+            if (npcName === '전체') {
+                for (const npc of npcList) {
+                    const apiUrl = `https://open.api.nexon.com/mabinogi/v1/npcshop/list?npc_name=${encodeURIComponent(npc)}&server_name=${encodeURIComponent(serverName)}&channel=${channel}`;
+
+                    try {
+                        const response = await fetch(apiUrl, {
+                            method: 'GET',
+                            headers: {
+                                'accept': 'application/json',
+                                'x-nxopen-api-key': apiKey
+                            }
+                        });
+                        const data = await response.json();
+                        shops = shops.concat(data.shop);
+                    } catch (error) {
+                        console.error(`Error fetching items for ${npc}:`, error);
+                    }
+                }
+            } else {
+                const apiUrl = `https://open.api.nexon.com/mabinogi/v1/npcshop/list?npc_name=${encodeURIComponent(npcName)}&server_name=${encodeURIComponent(serverName)}&channel=${channel}`;
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'GET',
+                        headers: {
+                            'accept': 'application/json',
+                            'x-nxopen-api-key': apiKey
+                        }
+                    });
+                    const data = await response.json();
+                    shops = data.shop;
+                } catch (error) {
+                    console.error('Error fetching NPC shop items:', error);
+                }
+            }
+
+            displayItems(shops); // 아이템 표시 함수 호출
+        }
+
+        // 아이템들을 화면에 표시
+        function displayItems(shops) {
+            const itemContainer = document.getElementById('item-container');
+            itemContainer.innerHTML = ''; // 이전 아이템 삭제
+
+            shops.forEach(shop => {
+                const items = shop.item || []; // 각 상점의 아이템 배열
+
+                items.forEach(item => {
+                    // '튼튼한'이 포함된 아이템만 표시
+                    if (item.item_display_name.includes('튼튼한')) {
+                        const itemHTML = createItemHTML(item);
+                        itemContainer.appendChild(itemHTML);
+                    }
+                });
+            });
+        }
+
+        // 아이템 HTML 생성 함수
+        function createItemHTML(item) {
+            const container = document.createElement('div');
+            container.classList.add('container');
+
+            const itemName = document.createElement('div');
+            itemName.classList.add('item-name');
+            itemName.textContent = item.item_display_name;
+
+            const itemImage = document.createElement('img');
+            itemImage.classList.add('item-image');
+            itemImage.src = item.image_url;
+            itemImage.alt = item.item_display_name;
+
+            // 색상 코드 생성
+            const colorCodes = document.createElement('div');
+            colorCodes.classList.add('color-codes');
+            const colorData = decodeURIComponent(item.image_url.split('item_color=')[1]);
+            const colors = JSON.parse(colorData);
+
+// 색상 박스 추가
+for (let i = 1; i <= 3; i++) {
+    const colorKey = `color_0${i}`;
+    if (colors[colorKey]) {
+        const colorBox = document.createElement('span');
+        colorBox.classList.add('color-box');
+        colorBox.style.backgroundColor = colors[colorKey]; // 색상 박스 배경색 설정
+
+        // RGB 값을 0.0.0 형식으로 변환
+        const rgbFormatted = rgbTo0dot0dot0(colors[colorKey]);
+
+        // RGB 값 텍스트 추가
+        const rgbText = document.createElement('span');
+        rgbText.textContent = rgbFormatted; // 0.0.0 형식으로 변환된 값
+        rgbText.style.marginLeft = '5px'; // 박스와 텍스트 사이에 여백 추가
+
+        // 툴팁 생성
+        const tooltip = document.createElement('span');
+        tooltip.classList.add('tooltip');
+        tooltip.textContent = rgbFormatted; // 0.0.0 형식으로 변환
+        colorBox.appendChild(tooltip); // 색상 박스에 툴팁 추가
+
+        colorCodes.appendChild(colorBox); // 색상 박스 추가
+        colorCodes.appendChild(rgbText); // RGB 값 추가
+
+        // 줄바꿈 추가
+        colorCodes.appendChild(document.createElement('br')); // 줄바꿈 요소 추가
+    }
+}
+
+
+
+            container.appendChild(itemName);
+            container.appendChild(itemImage);
+            container.appendChild(colorCodes);
+
+            return container;
+        }
+
+        // RGB를 0.0.0 형식으로 변환하는 함수
+        function rgbTo0dot0dot0(rgb) {
+            const hex = rgb.match(/\w\w/g).map(x => parseInt(x, 16)); // 16진수로 변환
+            return hex.map(x => String(x)).join('.'); // 0.0.0 형식으로 조합
+        }
+
+        // 카운트다운 타이머 설정
+        function startCountdown() {
+            const countdownDuration = 24 * 60 * 60 * 1000; // 24시간
+            const totalIntervals = 24 * 60 / 36; // 24시간을 36분으로 나눈 횟수
+            const intervalDuration = countdownDuration / totalIntervals; // 각 인터벌 시간
+
+            // 현재 시각으로부터 남은 시간 계산
+            const now = new Date();
+            const nextInterval = new Date(now.getTime() + (intervalDuration - (now.getTime() % intervalDuration)));
+
+            // 카운트다운 업데이트
+            setInterval(() => {
+                const remainingTime = nextInterval - new Date();
+                const hours = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60 * 60));
+                const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
+
+                // 카운트다운 형식
+                countdownDisplay.textContent = `${minutes.toString().padStart(2, '0')}분 ${seconds.toString().padStart(2, '0')}초 후 리셋`;
+
+                // 카운트다운이 끝났을 경우
+                if (remainingTime < 0) {
+                    clearInterval(this);
+                    countdownDisplay.textContent = "리셋 되었습니다.";
+                }
+            }, 1000);
+        }
+
+        // 페이지가 로드될 때 카운트다운 시작
+        window.onload = startCountdown;
+    </script>
+
+</body>
+</html>
